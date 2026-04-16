@@ -4,7 +4,8 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$REPO_ROOT"
 
-bash scripts/select_xcode.sh
+export DEVELOPER_DIR="$(bash scripts/select_xcode.sh --path-only)"
+echo "Using DEVELOPER_DIR=$DEVELOPER_DIR"
 
 xcodegen generate
 

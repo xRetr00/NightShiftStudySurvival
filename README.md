@@ -83,6 +83,11 @@ This repository is now ready for both Windows development and Mac build handoff.
 - Fix applied: CI now runs on macos-15 and explicitly selects latest available Xcode (prefers Xcode 26.x), then runs generation/build/test with that toolchain.
 - Result: Generated project format and CI Xcode are now aligned.
 
+Latest follow-up fix from new logs:
+- Root cause: `select_xcode.sh` was run as a subprocess, so `DEVELOPER_DIR` export did not persist to the calling shell. As a result, build commands still used Xcode 16.4.
+- Additional failure: targets were missing generated Info.plist configuration, which blocked test builds with code-sign/Info.plist errors.
+- Fix applied: workflow/scripts now set `DEVELOPER_DIR` directly in the active shell and project.yml now enables `GENERATE_INFOPLIST_FILE: YES` for app and tests.
+
 ### Windows
 
 1. Continue coding in this repo from Windows as before.

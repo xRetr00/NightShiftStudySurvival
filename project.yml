@@ -16,6 +16,7 @@ targets:
       - NightShiftStudySurvival
     settings:
       base:
+        GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_KEY_CFBundleDisplayName: NightShift Study Survival
         INFOPLIST_KEY_UILaunchScreen_Generation: 'YES'
         INFOPLIST_KEY_UIApplicationSceneManifest_Generation: 'YES'
@@ -32,5 +33,8 @@ targets:
     platform: iOS
     sources:
       - NightShiftStudySurvivalTests
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
     dependencies:
       - target: NightShiftStudySurvival

@@ -14,7 +14,8 @@ if ! command -v xcodegen >/dev/null 2>&1; then
   brew install xcodegen
 fi
 
-bash scripts/select_xcode.sh
+export DEVELOPER_DIR="$(bash scripts/select_xcode.sh --path-only)"
+echo "Using DEVELOPER_DIR=$DEVELOPER_DIR"
 xcodebuild -version
 
 echo "Generating Xcode project..."

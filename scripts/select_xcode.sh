@@ -29,6 +29,13 @@ XCODE_APP_PATH="$(choose_latest_xcode)" || {
   exit 1
 }
 
-export DEVELOPER_DIR="${XCODE_APP_PATH}/Contents/Developer"
+DEVELOPER_DIR_PATH="${XCODE_APP_PATH}/Contents/Developer"
+
+if [[ "${1:-}" == "--path-only" ]]; then
+  echo "${DEVELOPER_DIR_PATH}"
+  exit 0
+fi
+
+export DEVELOPER_DIR="${DEVELOPER_DIR_PATH}"
 echo "Selected Xcode: ${XCODE_APP_PATH}"
 echo "DEVELOPER_DIR=${DEVELOPER_DIR}"

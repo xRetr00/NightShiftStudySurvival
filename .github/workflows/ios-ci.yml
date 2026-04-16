@@ -17,21 +17,25 @@ jobs:
 
       - name: Select Xcode 26 toolchain
         run: |
-          bash scripts/select_xcode.sh
+          export DEVELOPER_DIR="$(bash scripts/select_xcode.sh --path-only)"
           xcodebuild -version
 
       - name: Generate Xcode project
-        run: xcodegen generate
+        run: |
+          export DEVELOPER_DIR="$(bash scripts/select_xcode.sh --path-only)"
+          xcodegen generate
 
       - name: Show schemes
         run: |
-          bash scripts/select_xcode.sh
+          export DEVELOPER_DIR="$(bash scripts/select_xcode.sh --path-only)"
           xcodebuild -list
 
       - name: Build and test
         run: |
-          bash scripts/select_xcode.sh
+          export DEVELOPER_DIR="$(bash scripts/select_xcode.sh --path-only)"
           xcodebuild test \
             -scheme NightShiftStudySurvival \
             -destination 'platform=iOS Simulator,name=iPhone 17' \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
             -skipPackagePluginValidation
