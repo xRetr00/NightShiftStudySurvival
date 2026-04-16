@@ -81,7 +81,7 @@ This repository is now ready for both Windows development and Mac build handoff.
 2. Regenerate local sounds/icons anytime with:
   - pwsh -File scripts/generate_assets.ps1
 
-### Mac (for your friend)
+### Mac
 
 1. Install Xcode from App Store, open it once, and accept any license prompts.
 2. Install Homebrew (if needed):
