@@ -22,7 +22,7 @@ Phase 1 + Phase 2 + Phase 3 foundation is in place:
 - Local JSON import/restore flow from Settings
 - Alarm feedback execution service (state-driven audio+haptics loop)
 - Packaged alarm sound assets for Default/Siren/Industrial styles across all state profiles
-- Downloaded loud web alarm sounds with daily auto-rotation for work alarms only
+- Manual loud alarm sound pack integrated with daily auto-rotation for work alarms only
 - Packaged app branding assets (Logo + AppIcon asset catalog)
 - Initial XCTest scaffold for alarm and recovery engines
 - Additional tests for conflict detection, notification action routing, dashboard guidance, and notification delegate mock transition handling
@@ -88,8 +88,9 @@ This repository is now ready for both Windows development and Mac build handoff.
 1. Continue coding in this repo from Windows as before.
 2. Regenerate local sounds/icons anytime with:
   - pwsh -File scripts/generate_assets.ps1
-3. Download/update web loud alarm sounds with:
-  - pwsh -File scripts/download_web_alarm_sounds.ps1
+3. Replace sounds from your manual pack by copying files to:
+  - NightShiftStudySurvival/Resources/Sounds
+  and naming them to match app keys (alarm_... and web_...)
 4. Validate backup JSON and preview import counts/warnings with:
   - pwsh -File scripts/windows_import_preview.ps1 -JsonPath path\\to\\backup.json
 
@@ -107,7 +108,7 @@ This repository is now ready for both Windows development and Mac build handoff.
 - make project  -> regenerate Xcode project
 - make build    -> simulator build
 - make test     -> simulator tests
-- make web-sounds -> download loud web alarm sounds
+- make web-sounds -> optional helper download (not required if using manual sound pack)
 
 ### Version Targets Used
 

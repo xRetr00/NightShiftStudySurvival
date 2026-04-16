@@ -23,9 +23,6 @@ jobs:
       - name: Generate Xcode project
         run: xcodegen generate
 
-      - name: Download web alarm sounds
-        run: bash scripts/macos_download_web_alarm_sounds.sh
-
       - name: Show schemes
         run: |
           bash scripts/select_xcode.sh

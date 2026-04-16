@@ -20,7 +20,4 @@ xcodebuild -version
 echo "Generating Xcode project..."
 xcodegen generate
 
-echo "Downloading daily web alarm sounds..."
-bash scripts/macos_download_web_alarm_sounds.sh
-
 echo "Setup complete. Open NightShiftStudySurvival.xcodeproj in Xcode."
