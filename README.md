@@ -21,6 +21,8 @@ Phase 1 + Phase 2 + Phase 3 foundation is in place:
 - Local JSON export from Settings for personal backup
 - Local JSON import/restore flow from Settings
 - Alarm feedback execution service (state-driven audio+haptics loop)
+- Packaged alarm sound assets for Default/Siren/Industrial styles across all state profiles
+- Packaged app branding assets (Logo + AppIcon asset catalog)
 - Initial XCTest scaffold for alarm and recovery engines
 - Additional tests for conflict detection, notification action routing, and dashboard guidance
 - Optional chart visualization for weekday completion trends
@@ -36,6 +38,8 @@ Phase 1 + Phase 2 + Phase 3 foundation is in place:
 - NightShiftStudySurvival/Views
 - NightShiftStudySurvival/Theme
 - NightShiftStudySurvival/Seed
+- NightShiftStudySurvival/Resources (Sounds + Assets.xcassets)
+- scripts (asset generation + macOS setup/build/test)
 
 ## Alarm State Machine
 
@@ -69,18 +73,37 @@ Friday-Sunday are empty by default (Recovery days).
 
 ## Build Notes
 
-This repository currently contains source files and architecture scaffolding.
-To run (Windows-first + future Mac):
-1. Keep developing code on Windows using your Swift toolchain and repository structure.
-2. Use the included XcodeGen spec file project.yml.
-3. When Mac is available, run xcodegen generate at repository root to produce the Xcode project.
-4. Open generated .xcodeproj in Xcode, ensure iOS 17+ target, and build/run.
-5. GitHub Actions workflow .github/workflows/ios-ci.yml already runs macOS simulator tests.
+This repository is now ready for both Windows development and Mac build handoff.
+
+### Windows
+
+1. Continue coding in this repo from Windows as before.
+2. Regenerate local sounds/icons anytime with:
+  - pwsh -File scripts/generate_assets.ps1
+
+### Mac (for your friend)
+
+1. Install Xcode from App Store, open it once, and accept any license prompts.
+2. Install Homebrew (if needed):
+  - /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+3. From repository root run:
+  - make setup
+4. Open NightShiftStudySurvival.xcodeproj in Xcode, choose a simulator/device, then run.
+
+### Quick Commands (Mac)
+
+- make project  -> regenerate Xcode project
+- make build    -> simulator build
+- make test     -> simulator tests
+
+### CI
+
+- GitHub Actions workflow at .github/workflows/ios-ci.yml builds/tests on macOS automatically.
 
 ## Next Steps (Implementation Continuation)
 
 1. Add richer historical charting for sleep adherence over time (not only weekday completion).
 2. Add import safety controls refinements: block-level preview and conflict warnings before apply.
 3. Expand tests for AppNotificationDelegate transition handling with mocked notification payloads.
-4. Add packaged alarm audio asset files for each sound style and profile.
+4. Add in-app preview player so users can audition each alarm style before saving.
 5. Add one-command Windows helper script to validate export/import JSON and show preview.

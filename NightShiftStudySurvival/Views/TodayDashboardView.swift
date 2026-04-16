@@ -31,9 +31,17 @@ struct TodayDashboardView: View {
         card {
             if let snapshot = viewModel.snapshot {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text(snapshot.dayLabel)
-                        .font(.title2.bold())
-                        .foregroundStyle(.white)
+                    HStack(spacing: 10) {
+                        Image("Logo")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 42, height: 42)
+                            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+
+                        Text(snapshot.dayLabel)
+                            .font(.title2.bold())
+                            .foregroundStyle(.white)
+                    }
                     Text(snapshot.dayType.rawValue)
                         .font(.headline)
                         .foregroundStyle(colorForDayType(snapshot.dayType))
