@@ -1,0 +1,29 @@
+name: iOS CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+
+jobs:
+  build-and-test:
+    runs-on: macos-14
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        run: xcodegen generate
+
+      - name: Show schemes
+        run: xcodebuild -list
+
+      - name: Build and test
+        run: |
+          xcodebuild test \
+            -scheme NightShiftStudySurvival \
+            -destination 'platform=iOS Simulator,name=iPhone 15' \
+            -skipPackagePluginValidation
