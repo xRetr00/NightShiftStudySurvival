@@ -71,6 +71,51 @@ struct StatisticsView: View {
 #endif
 
                 VStack(alignment: .leading, spacing: 8) {
+                    Text("Sleep adherence history")
+                        .font(.headline)
+                        .foregroundStyle(.white)
+
+                    if viewModel.sleepHistory.isEmpty {
+                        Text("No sleep history yet")
+                            .foregroundStyle(.white.opacity(0.75))
+                    } else {
+#if canImport(Charts)
+                        Chart(viewModel.sleepHistory) { point in
+                            LineMark(
+                                x: .value("Date", point.date),
+                                y: .value("Follow", Int(point.followRate * 100))
+                            )
+                            .foregroundStyle(AppTheme.safe)
+
+                            PointMark(
+                                x: .value("Date", point.date),
+                                y: .value("Follow", Int(point.followRate * 100))
+                            )
+                            .foregroundStyle(AppTheme.info)
+                        }
+                        .frame(height: 170)
+#endif
+
+                        ForEach(viewModel.sleepHistory) { point in
+                            HStack {
+                                Text(point.dateLabel)
+                                    .foregroundStyle(.white)
+                                Spacer()
+                                Text("\(point.followedCount)/\(point.totalCount)")
+                                    .foregroundStyle(AppTheme.info)
+                                Text("\(Int(point.followRate * 100))%")
+                                    .foregroundStyle(AppTheme.safe)
+                            }
+                            .font(.caption)
+                        }
+                    }
+                }
+                .padding()
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(AppTheme.card)
+                .clipShape(RoundedRectangle(cornerRadius: AppTheme.cornerRadius, style: .continuous))
+
+                VStack(alignment: .leading, spacing: 8) {
                     Text("Insights")
                         .font(.headline)
                         .foregroundStyle(.white)

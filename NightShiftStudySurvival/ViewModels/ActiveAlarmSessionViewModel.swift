@@ -17,6 +17,7 @@ final class ActiveAlarmSessionViewModel: ObservableObject {
     private let stateMachine = AlarmStateMachine()
     private let mathEngine = MathChallengeEngine()
     private let feedback = AlarmFeedbackService.shared
+    private let workSoundService = WorkAlarmWebSoundService()
     private var logger: AlarmTransitionLogger
     private var timer: Timer?
     private var snoozeCount = 0
@@ -239,12 +240,18 @@ final class ActiveAlarmSessionViewModel: ObservableObject {
             return
         }
 
+        let isWorkStrictAlarm = alarm.alarmKind == .wakeForWork || alarm.alarmKind == .finalEmergency
+        let webDailySound = isWorkStrictAlarm ? workSoundService.dailySoundName() : nil
+        let loudness = isWorkStrictAlarm ? "Max" : (settings?.alarmLoudnessProfile ?? "High")
+
         feedback.start(
             sound: definition.soundProfile,
             haptics: definition.hapticPattern,
             strongHapticsEnabled: settings?.enableStrongHaptics ?? true,
             soundStyle: settings?.alarmSoundStyle ?? "Default",
-            loudnessProfile: settings?.alarmLoudnessProfile ?? "High"
+            loudnessProfile: loudness,
+            preferredWebSoundName: webDailySound,
+            webSoundOnly: isWorkStrictAlarm
         )
     }
 }

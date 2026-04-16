@@ -22,10 +22,12 @@ Phase 1 + Phase 2 + Phase 3 foundation is in place:
 - Local JSON import/restore flow from Settings
 - Alarm feedback execution service (state-driven audio+haptics loop)
 - Packaged alarm sound assets for Default/Siren/Industrial styles across all state profiles
+- Downloaded loud web alarm sounds with daily auto-rotation for work alarms only
 - Packaged app branding assets (Logo + AppIcon asset catalog)
 - Initial XCTest scaffold for alarm and recovery engines
-- Additional tests for conflict detection, notification action routing, and dashboard guidance
+- Additional tests for conflict detection, notification action routing, dashboard guidance, and notification delegate mock transition handling
 - Optional chart visualization for weekday completion trends
+- Rich historical sleep adherence chart (daily follow rate history)
 - Core screens: Dashboard, Timetable, Alarm Center, Sleep Plan, Subject Settings, Statistics, Settings
 
 ## Folder Structure
@@ -80,6 +82,10 @@ This repository is now ready for both Windows development and Mac build handoff.
 1. Continue coding in this repo from Windows as before.
 2. Regenerate local sounds/icons anytime with:
   - pwsh -File scripts/generate_assets.ps1
+3. Download/update web loud alarm sounds with:
+  - pwsh -File scripts/download_web_alarm_sounds.ps1
+4. Validate backup JSON and preview import counts/warnings with:
+  - pwsh -File scripts/windows_import_preview.ps1 -JsonPath path\\to\\backup.json
 
 ### Mac
 
@@ -95,15 +101,24 @@ This repository is now ready for both Windows development and Mac build handoff.
 - make project  -> regenerate Xcode project
 - make build    -> simulator build
 - make test     -> simulator tests
+- make web-sounds -> download loud web alarm sounds
 
 ### CI
 
 - GitHub Actions workflow at .github/workflows/ios-ci.yml builds/tests on macOS automatically.
 
-## Next Steps (Implementation Continuation)
+## Completed Backlog
 
-1. Add richer historical charting for sleep adherence over time (not only weekday completion).
-2. Add import safety controls refinements: block-level preview and conflict warnings before apply.
-3. Expand tests for AppNotificationDelegate transition handling with mocked notification payloads.
-4. Add in-app preview player so users can audition each alarm style before saving.
-5. Add one-command Windows helper script to validate export/import JSON and show preview.
+The previously listed implementation continuation steps are completed:
+1. Rich historical charting for sleep adherence over time.
+2. Import safety refinements with block-level preview and overlap conflict warnings.
+3. Expanded AppNotificationDelegate integration tests using mocked payload handling.
+4. In-app alarm preview player in Settings.
+5. One-command Windows import preview helper script.
+
+## Alarm Sound Behavior (Current)
+
+- App theme is forced to Dark mode.
+- Work alarms and Final Emergency alarms use loud web-downloaded sounds only.
+- The web work-alarm sound rotates automatically by day (daily variation).
+- Non-work alarms continue to use the user-selected local style and loudness profile.

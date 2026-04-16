@@ -4,6 +4,7 @@ import UIKit
 
 struct SettingsView: View {
     let context: ModelContext
+    private let workWebSoundService = WorkAlarmWebSoundService()
 
     @State private var settings: AppSettings?
     @State private var exportJSON = ""
@@ -109,6 +110,26 @@ struct SettingsView: View {
                             Text("Medium").tag("Medium")
                             Text("High").tag("High")
                             Text("Max").tag("Max")
+                        }
+
+                        Button("Preview selected style") {
+                            AlarmFeedbackService.shared.preview(
+                                style: settings.alarmSoundStyle,
+                                loudnessProfile: settings.alarmLoudnessProfile
+                            )
+                        }
+
+                        Button("Preview today's work alarm web sound") {
+                            let dailySound = workWebSoundService.dailySoundName()
+                            AlarmFeedbackService.shared.preview(
+                                style: settings.alarmSoundStyle,
+                                loudnessProfile: "Max",
+                                webSoundName: dailySound
+                            )
+                        }
+
+                        Button("Stop preview") {
+                            AlarmFeedbackService.shared.stop()
                         }
                     }
 
@@ -218,8 +239,31 @@ struct SettingsView: View {
                                     .font(.caption2)
                                 Text("Sleep plans: \(importPreview.existingSleepRecommendations) -> \(importPreview.incomingSleepRecommendations)")
                                     .font(.caption2)
+                                Text("Sleep blocks: \(importPreview.existingSleepBlocks) -> \(importPreview.incomingSleepBlocks)")
+                                    .font(.caption2)
                                 Text("Sleep logs: \(importPreview.existingSleepLogs) -> \(importPreview.incomingSleepLogs)")
                                     .font(.caption2)
+
+                                if !importPreview.blockPreview.isEmpty {
+                                    Text("Incoming block preview")
+                                        .font(.caption.weight(.semibold))
+                                        .padding(.top, 4)
+                                    ForEach(importPreview.blockPreview, id: \.self) { line in
+                                        Text("- \(line)")
+                                            .font(.caption2)
+                                    }
+                                }
+
+                                if !importPreview.conflictWarnings.isEmpty {
+                                    Text("Conflict warnings")
+                                        .font(.caption.weight(.semibold))
+                                        .padding(.top, 4)
+                                    ForEach(importPreview.conflictWarnings, id: \.self) { warning in
+                                        Text("- \(warning)")
+                                            .font(.caption)
+                                            .foregroundStyle(AppTheme.critical)
+                                    }
+                                }
                             }
                         }
 

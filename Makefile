@@ -8,6 +8,8 @@ help:
 	@echo "  build        - Build app on iOS Simulator"
 	@echo "  test         - Run tests on iOS Simulator"
 	@echo "  assets       - Regenerate local assets on Windows PowerShell"
+	@echo "  web-sounds   - Download loud web alarm sounds"
+	@echo "  import-preview JSON=... - Validate/import-preview backup JSON on Windows"
 
 setup:
 	bash scripts/macos_setup.sh
@@ -23,3 +25,9 @@ test:
 
 assets:
 	pwsh -File scripts/generate_assets.ps1
+
+web-sounds:
+	bash scripts/macos_download_web_alarm_sounds.sh
+
+import-preview:
+	pwsh -File scripts/windows_import_preview.ps1 -JsonPath "$(JSON)"

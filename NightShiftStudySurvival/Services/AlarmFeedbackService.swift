@@ -10,6 +10,8 @@ final class AlarmFeedbackService {
     private var beepPlayer: AVAudioPlayer?
     private var soundTimer: Timer?
     private var hapticTimer: Timer?
+    private var previewStopWorkItem: DispatchWorkItem?
+    private let supportedExtensions = ["wav", "mp3", "m4a", "caf", "aiff"]
 
     private init() {}
 
@@ -18,16 +20,46 @@ final class AlarmFeedbackService {
         haptics: HapticPattern,
         strongHapticsEnabled: Bool,
         soundStyle: String,
-        loudnessProfile: String
+        loudnessProfile: String,
+        preferredWebSoundName: String? = nil,
+        webSoundOnly: Bool = false
     ) {
         stop()
 
         configureAudioSession()
-        startSoundLoop(for: sound, style: soundStyle, loudnessProfile: loudnessProfile)
+        startSoundLoop(
+            for: sound,
+            style: soundStyle,
+            loudnessProfile: loudnessProfile,
+            preferredWebSoundName: preferredWebSoundName,
+            webSoundOnly: webSoundOnly
+        )
         startHapticPulse(pattern: haptics, enabled: strongHapticsEnabled)
     }
 
+    func preview(style: String, loudnessProfile: String, webSoundName: String? = nil) {
+        start(
+            sound: .emergencyMax,
+            haptics: .none,
+            strongHapticsEnabled: false,
+            soundStyle: style,
+            loudnessProfile: loudnessProfile,
+            preferredWebSoundName: webSoundName,
+            webSoundOnly: webSoundName != nil
+        )
+
+        let stopItem = DispatchWorkItem { [weak self] in
+            self?.stop()
+        }
+        previewStopWorkItem?.cancel()
+        previewStopWorkItem = stopItem
+        DispatchQueue.main.asyncAfter(deadline: .now() + 4.0, execute: stopItem)
+    }
+
     func stop() {
+        previewStopWorkItem?.cancel()
+        previewStopWorkItem = nil
+
         soundTimer?.invalidate()
         soundTimer = nil
         hapticTimer?.invalidate()
@@ -45,7 +77,26 @@ final class AlarmFeedbackService {
         try? session.setActive(true)
     }
 
-    private func startSoundLoop(for profile: SoundProfile, style: String, loudnessProfile: String) {
+    private func startSoundLoop(
+        for profile: SoundProfile,
+        style: String,
+        loudnessProfile: String,
+        preferredWebSoundName: String?,
+        webSoundOnly: Bool
+    ) {
+        if let preferredWebSoundName,
+           loadAndPlayResource(named: preferredWebSoundName, volume: 1.0) {
+            return
+        }
+
+        if webSoundOnly {
+            AudioServicesPlaySystemSound(1106)
+            soundTimer = Timer.scheduledTimer(withTimeInterval: 2, repeats: true) { _ in
+                AudioServicesPlaySystemSound(1106)
+            }
+            return
+        }
+
         if loadAndPlayBundledSound(profile: profile, style: style, loudnessProfile: loudnessProfile) {
             return
         }
@@ -61,21 +112,29 @@ final class AlarmFeedbackService {
 
     private func loadAndPlayBundledSound(profile: SoundProfile, style: String, loudnessProfile: String) -> Bool {
         let resource = soundResourceName(profile: profile, style: style)
-        guard let url = Bundle.main.url(forResource: resource, withExtension: "wav") else {
-            return false
+        return loadAndPlayResource(named: resource, volume: volume(for: loudnessProfile))
+    }
+
+    private func loadAndPlayResource(named resource: String, volume: Float) -> Bool {
+        for ext in supportedExtensions {
+            guard let url = Bundle.main.url(forResource: resource, withExtension: ext) else {
+                continue
+            }
+
+            do {
+                let player = try AVAudioPlayer(contentsOf: url)
+                player.numberOfLoops = -1
+                player.volume = volume
+                player.prepareToPlay()
+                player.play()
+                beepPlayer = player
+                return true
+            } catch {
+                continue
+            }
         }
 
-        do {
-            let player = try AVAudioPlayer(contentsOf: url)
-            player.numberOfLoops = -1
-            player.volume = volume(for: loudnessProfile)
-            player.prepareToPlay()
-            player.play()
-            beepPlayer = player
-            return true
-        } catch {
-            return false
-        }
+        return false
     }
 
     private func soundResourceName(profile: SoundProfile, style: String) -> String {

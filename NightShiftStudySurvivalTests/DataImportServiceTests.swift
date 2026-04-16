@@ -63,6 +63,44 @@ final class DataImportServiceTests: XCTestCase {
         XCTAssertTrue(settings.isEmpty)
     }
 
+      func testPreviewJSONShowsOverlapWarningsAndBlockPreview() throws {
+        let context = try makeContext()
+
+        let existingSubject = Subject(
+          code: "EX101",
+          title: "Existing",
+          attendanceMode: .normal,
+          colorHex: "#111111"
+        )
+        let existingSession = ClassSession(
+          dayOfWeek: 1,
+          startMinutes: 550,
+          endMinutes: 620,
+          location: "Campus",
+          subject: existingSubject
+        )
+        existingSubject.sessions.append(existingSession)
+        context.insert(existingSubject)
+        context.insert(existingSession)
+
+        let existingRecommendation = SleepRecommendation(date: .now, dayType: .recovery, note: "Existing")
+        let existingBlock = SleepBlock(
+          startAt: ISO8601DateFormatter().date(from: "2026-04-16T07:30:00Z") ?? .now,
+          endAt: ISO8601DateFormatter().date(from: "2026-04-16T09:00:00Z") ?? .now,
+          strategyLabel: .recoveryDay,
+          recommendation: existingRecommendation
+        )
+        existingRecommendation.blocks.append(existingBlock)
+        context.insert(existingRecommendation)
+        context.insert(existingBlock)
+        try? context.save()
+
+        let preview = DataImportService.previewJSON(sampleJSON(), context: context)
+        XCTAssertNotNil(preview)
+        XCTAssertFalse(preview?.blockPreview.isEmpty ?? true)
+        XCTAssertFalse(preview?.conflictWarnings.isEmpty ?? true)
+      }
+
     private func sampleJSON() -> String {
         """
         {

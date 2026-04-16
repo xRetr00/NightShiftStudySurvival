@@ -1,0 +1,7 @@
+{
+  "settings": {"workStartMinutes":1320,"workEndMinutes":300,"homeToUniversityTravelMinutes":45,"workToHomeTravelMinutes":30,"homeToWorkTravelMinutes":0,"mathDifficulty":"Medium","requiredCorrectMathAnswers":3,"recoveryBoostMinutes":45,"maxMissedAlarmRetries":2},
+  "subjects": [{"code":"CE101","title":"A","attendanceMode":"Normal","isEnabled":true,"isOnline":false,"importance":2,"colorHex":"#123456","notes":"","sessions":[{"dayOfWeek":1,"startMinutes":540,"endMinutes":600,"hasConflict":false,"isTemporarilyDisabled":false,"isPractical":false},{"dayOfWeek":1,"startMinutes":580,"endMinutes":640,"hasConflict":false,"isTemporarilyDisabled":false,"isPractical":false}]}],
+  "alarms": [],
+  "sleepRecommendations": [{"date":"2026-04-16T00:00:00Z","dayType":"Recovery Day","note":"n","isUserEdited":false,"blocks":[{"startAt":"2026-04-16T07:00:00Z","endAt":"2026-04-16T10:00:00Z","strategyLabel":"Recovery day","isLocked":false},{"startAt":"2026-04-16T09:30:00Z","endAt":"2026-04-16T11:00:00Z","strategyLabel":"Recovery day","isLocked":false}]}],
+  "sleepExecutionLogs": []
+}

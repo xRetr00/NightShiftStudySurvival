@@ -17,6 +17,7 @@ struct ImportPreview {
     let incomingSessions: Int
     let incomingAlarms: Int
     let incomingSleepRecommendations: Int
+    let incomingSleepBlocks: Int
     let incomingSleepLogs: Int
 
     let existingSettings: Int
@@ -24,12 +25,15 @@ struct ImportPreview {
     let existingSessions: Int
     let existingAlarms: Int
     let existingSleepRecommendations: Int
+    let existingSleepBlocks: Int
     let existingSleepLogs: Int
 
+    let blockPreview: [String]
+    let conflictWarnings: [String]
     let warnings: [String]
 
     var summary: String {
-        "Incoming: \(incomingSubjects) subjects / \(incomingSessions) sessions / \(incomingAlarms) alarms / \(incomingSleepRecommendations) sleep plans / \(incomingSleepLogs) sleep logs. Existing data will be replaced only for selected sections."
+        "Incoming: \(incomingSubjects) subjects / \(incomingSessions) sessions / \(incomingAlarms) alarms / \(incomingSleepRecommendations) sleep plans / \(incomingSleepBlocks) blocks / \(incomingSleepLogs) sleep logs. Existing data will be replaced only for selected sections."
     }
 }
 
@@ -128,19 +132,30 @@ enum DataImportService {
 
     static func previewJSON(_ raw: String, context: ModelContext) -> ImportPreview? {
         guard let snapshot = decodeSnapshot(raw) else { return nil }
+        let iso = ISO8601DateFormatter()
 
         let incomingSubjects = snapshot.subjects.count
         let incomingSessions = snapshot.subjects.flatMap(\.sessions).count
         let incomingAlarms = snapshot.alarms.count
         let incomingRecommendations = snapshot.sleepRecommendations.count
+        let incomingBlocks = snapshot.sleepRecommendations.flatMap(\.blocks).count
         let incomingSleepLogs = snapshot.sleepExecutionLogs.count
 
-        let existingSubjects = (try? context.fetch(FetchDescriptor<Subject>()))?.count ?? 0
-        let existingSessions = (try? context.fetch(FetchDescriptor<ClassSession>()))?.count ?? 0
-        let existingAlarms = (try? context.fetch(FetchDescriptor<AlarmSchedule>()))?.count ?? 0
-        let existingRecommendations = (try? context.fetch(FetchDescriptor<SleepRecommendation>()))?.count ?? 0
-        let existingSleepLogs = (try? context.fetch(FetchDescriptor<SleepExecutionLog>()))?.count ?? 0
-        let existingSettings = (try? context.fetch(FetchDescriptor<AppSettings>()))?.count ?? 0
+        let existingSubjectItems = (try? context.fetch(FetchDescriptor<Subject>())) ?? []
+        let existingSessionItems = (try? context.fetch(FetchDescriptor<ClassSession>())) ?? []
+        let existingAlarmItems = (try? context.fetch(FetchDescriptor<AlarmSchedule>())) ?? []
+        let existingRecommendationItems = (try? context.fetch(FetchDescriptor<SleepRecommendation>())) ?? []
+        let existingSleepBlockItems = (try? context.fetch(FetchDescriptor<SleepBlock>())) ?? []
+        let existingSleepLogItems = (try? context.fetch(FetchDescriptor<SleepExecutionLog>())) ?? []
+        let existingSettingsItems = (try? context.fetch(FetchDescriptor<AppSettings>())) ?? []
+
+        let existingSubjects = existingSubjectItems.count
+        let existingSessions = existingSessionItems.count
+        let existingAlarms = existingAlarmItems.count
+        let existingRecommendations = existingRecommendationItems.count
+        let existingSleepBlocks = existingSleepBlockItems.count
+        let existingSleepLogs = existingSleepLogItems.count
+        let existingSettings = existingSettingsItems.count
 
         var warnings: [String] = []
         if snapshot.settings == nil {
@@ -153,19 +168,31 @@ enum DataImportService {
             warnings.append("Backup has no sleep analytics data.")
         }
 
+        let blockPreview = buildBlockPreview(from: snapshot, iso: iso)
+        let conflictWarnings = collectConflictWarnings(
+            snapshot: snapshot,
+            iso: iso,
+            existingSessions: existingSessionItems,
+            existingBlocks: existingSleepBlockItems
+        )
+
         return ImportPreview(
             incomingSettings: snapshot.settings == nil ? 0 : 1,
             incomingSubjects: incomingSubjects,
             incomingSessions: incomingSessions,
             incomingAlarms: incomingAlarms,
             incomingSleepRecommendations: incomingRecommendations,
+            incomingSleepBlocks: incomingBlocks,
             incomingSleepLogs: incomingSleepLogs,
             existingSettings: existingSettings,
             existingSubjects: existingSubjects,
             existingSessions: existingSessions,
             existingAlarms: existingAlarms,
             existingSleepRecommendations: existingRecommendations,
+            existingSleepBlocks: existingSleepBlocks,
             existingSleepLogs: existingSleepLogs,
+            blockPreview: blockPreview,
+            conflictWarnings: conflictWarnings,
             warnings: warnings
         )
     }
@@ -303,6 +330,106 @@ enum DataImportService {
     private static func decodeSnapshot(_ raw: String) -> ImportSnapshot? {
         guard let data = raw.data(using: .utf8) else { return nil }
         return try? JSONDecoder().decode(ImportSnapshot.self, from: data)
+    }
+
+    private static func buildBlockPreview(from snapshot: ImportSnapshot, iso: ISO8601DateFormatter) -> [String] {
+        var lines: [String] = []
+        let outFormatter = DateFormatter()
+        outFormatter.dateFormat = "MMM d HH:mm"
+
+        for recommendation in snapshot.sleepRecommendations {
+            for block in recommendation.blocks {
+                guard let start = iso.date(from: block.startAt),
+                      let end = iso.date(from: block.endAt) else {
+                    continue
+                }
+
+                lines.append("\(recommendation.dayType): \(outFormatter.string(from: start)) - \(outFormatter.string(from: end)) [\(block.strategyLabel)]")
+                if lines.count >= 6 {
+                    return lines
+                }
+            }
+        }
+
+        return lines
+    }
+
+    private static func collectConflictWarnings(
+        snapshot: ImportSnapshot,
+        iso: ISO8601DateFormatter,
+        existingSessions: [ClassSession],
+        existingBlocks: [SleepBlock]
+    ) -> [String] {
+        var warnings: [String] = []
+
+        let incomingSessionTuples = snapshot.subjects.flatMap { subject in
+            subject.sessions.map { session in
+                (
+                    subject: subject.code,
+                    day: min(7, max(1, session.dayOfWeek)),
+                    start: min(1439, max(0, session.startMinutes)),
+                    end: min(1439, max(0, session.endMinutes))
+                )
+            }
+        }
+
+        let groupedIncoming = Dictionary(grouping: incomingSessionTuples, by: { $0.day })
+        var incomingOverlapCount = 0
+        for sessions in groupedIncoming.values {
+            let sorted = sessions.sorted { $0.start < $1.start }
+            for index in 0..<max(0, sorted.count - 1) {
+                if sorted[index + 1].start < sorted[index].end {
+                    incomingOverlapCount += 1
+                }
+            }
+        }
+        if incomingOverlapCount > 0 {
+            warnings.append("Incoming timetable contains \(incomingOverlapCount) overlapping session pair(s).")
+        }
+
+        var overlapWithExistingTimetable = 0
+        for incoming in incomingSessionTuples {
+            if existingSessions.contains(where: {
+                $0.dayOfWeek == incoming.day && incoming.start < $0.endMinutes && incoming.end > $0.startMinutes
+            }) {
+                overlapWithExistingTimetable += 1
+            }
+        }
+        if overlapWithExistingTimetable > 0 {
+            warnings.append("Incoming timetable overlaps existing sessions in \(overlapWithExistingTimetable) slot(s).")
+        }
+
+        let incomingSleepRanges = snapshot.sleepRecommendations.flatMap { rec in
+            rec.blocks.compactMap { block -> (Date, Date)? in
+                guard let start = iso.date(from: block.startAt), let end = iso.date(from: block.endAt) else {
+                    return nil
+                }
+                return (start, end)
+            }
+        }
+
+        var overlapWithExistingSleep = 0
+        for range in incomingSleepRanges {
+            if existingBlocks.contains(where: { range.0 < $0.endAt && range.1 > $0.startAt }) {
+                overlapWithExistingSleep += 1
+            }
+        }
+        if overlapWithExistingSleep > 0 {
+            warnings.append("Incoming sleep blocks overlap existing saved blocks in \(overlapWithExistingSleep) case(s).")
+        }
+
+        let sortedIncomingRanges = incomingSleepRanges.sorted(by: { $0.0 < $1.0 })
+        var incomingSleepOverlapCount = 0
+        for index in 0..<max(0, sortedIncomingRanges.count - 1) {
+            if sortedIncomingRanges[index + 1].0 < sortedIncomingRanges[index].1 {
+                incomingSleepOverlapCount += 1
+            }
+        }
+        if incomingSleepOverlapCount > 0 {
+            warnings.append("Incoming sleep plan includes \(incomingSleepOverlapCount) overlapping block pair(s).")
+        }
+
+        return warnings
     }
 
     private static func clearSelectedSections(context: ModelContext, selection: ImportSelection) {

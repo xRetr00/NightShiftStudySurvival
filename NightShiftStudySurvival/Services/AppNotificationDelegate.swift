@@ -22,6 +22,16 @@ final class AppNotificationDelegate: NSObject, UNUserNotificationCenterDelegate 
         actionRouter.decision(for: actionIdentifier)
     }
 
+    func handleMockResponse(alarmId: UUID, actionIdentifier: String, now: Date = .now) -> Bool {
+        guard let context else { return false }
+        return processNotificationAction(
+            alarmId: alarmId,
+            actionIdentifier: actionIdentifier,
+            now: now,
+            context: context
+        )
+    }
+
     nonisolated func userNotificationCenter(
         _ center: UNUserNotificationCenter,
         didReceive response: UNNotificationResponse,
@@ -48,17 +58,31 @@ final class AppNotificationDelegate: NSObject, UNUserNotificationCenterDelegate 
             return
         }
 
+        _ = processNotificationAction(
+            alarmId: alarmId,
+            actionIdentifier: response.actionIdentifier,
+            now: Date(),
+            context: context
+        )
+    }
+
+    private func processNotificationAction(
+        alarmId: UUID,
+        actionIdentifier: String,
+        now: Date,
+        context: ModelContext
+    ) -> Bool {
+
         let descriptor = FetchDescriptor<AlarmSchedule>()
         guard let alarm = (try? context.fetch(descriptor))?.first(where: { $0.id == alarmId }) else {
-            return
+            return false
         }
 
         let logger = AlarmTransitionLogger(context: context)
         let from = alarm.currentState
-        let plannedAt = alarm.expiresCurrentStateAt ?? Date()
-        let now = Date()
+        let plannedAt = alarm.expiresCurrentStateAt ?? now
 
-        let decision = actionRouter.decision(for: response.actionIdentifier)
+        let decision = actionRouter.decision(for: actionIdentifier)
 
         if decision.userAction == .snooze {
             let newExpiry = (alarm.expiresCurrentStateAt ?? now).addingTimeInterval(60)
@@ -91,6 +115,7 @@ final class AppNotificationDelegate: NSObject, UNUserNotificationCenterDelegate 
         }
 
         try? context.save()
+        return true
     }
 
     private func applyTransition(

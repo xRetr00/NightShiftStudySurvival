@@ -13,6 +13,15 @@ struct WeekdayTrend: Identifiable {
     let missedCount: Int
 }
 
+struct SleepHistoryPoint: Identifiable {
+    let id = UUID()
+    let date: Date
+    let dateLabel: String
+    let followRate: Double
+    let followedCount: Int
+    let totalCount: Int
+}
+
 @MainActor
 final class StatisticsViewModel: ObservableObject {
     @Published private(set) var transitionCount = 0
@@ -22,6 +31,7 @@ final class StatisticsViewModel: ObservableObject {
     @Published private(set) var avgDriftMillis = 0
     @Published private(set) var sleepFollowRate = 0.0
     @Published private(set) var weekdayTrends: [WeekdayTrend] = []
+    @Published private(set) var sleepHistory: [SleepHistoryPoint] = []
     @Published private(set) var insights: [ReliabilityInsight] = []
 
     private let context: ModelContext
@@ -61,6 +71,7 @@ final class StatisticsViewModel: ObservableObject {
         sleepFollowRate = sleepLogs.isEmpty ? 0 : Double(followed) / Double(sleepLogs.count)
 
         weekdayTrends = buildWeekdayTrends(alarms: alarms)
+        sleepHistory = buildSleepHistory(logs: sleepLogs)
 
         buildInsights(alarms: alarms, transitions: transitions, sleepLogs: sleepLogs)
     }
@@ -143,6 +154,33 @@ final class StatisticsViewModel: ObservableObject {
         case 6: return "Fri"
         case 7: return "Sat"
         default: return "-"
+        }
+    }
+
+    private func buildSleepHistory(logs: [SleepExecutionLog]) -> [SleepHistoryPoint] {
+        guard !logs.isEmpty else { return [] }
+
+        let calendar = Calendar.current
+        let grouped = Dictionary(grouping: logs) { calendar.startOfDay(for: $0.loggedAt) }
+
+        let sortedDays = grouped.keys.sorted()
+        let recentDays = Array(sortedDays.suffix(21))
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMM d"
+
+        return recentDays.compactMap { day in
+            guard let dayLogs = grouped[day], !dayLogs.isEmpty else { return nil }
+            let followed = dayLogs.filter { $0.status == .followed }.count
+            let total = dayLogs.count
+            let rate = Double(followed) / Double(total)
+
+            return SleepHistoryPoint(
+                date: day,
+                dateLabel: formatter.string(from: day),
+                followRate: rate,
+                followedCount: followed,
+                totalCount: total
+            )
         }
     }
 }
