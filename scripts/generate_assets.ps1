@@ -1,11 +1,14 @@
 $ErrorActionPreference = 'Stop'
 
-Set-Location (Join-Path $PSScriptRoot '..')
+$repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
+$projectRoot = Join-Path $repoRoot 'NightShiftStudySurvival'
+$resourcesRoot = Join-Path $projectRoot 'Resources'
 
-$soundsDir = 'NightShiftStudySurvival/Resources/Sounds'
-$appIconDir = 'NightShiftStudySurvival/Resources/Assets.xcassets/AppIcon.appiconset'
-$logoDir = 'NightShiftStudySurvival/Resources/Assets.xcassets/Logo.imageset'
-$accentDir = 'NightShiftStudySurvival/Resources/Assets.xcassets/AccentColor.colorset'
+$soundsDir = Join-Path $resourcesRoot 'Sounds'
+$xcassetsDir = Join-Path $resourcesRoot 'Assets.xcassets'
+$appIconDir = Join-Path $xcassetsDir 'AppIcon.appiconset'
+$logoDir = Join-Path $xcassetsDir 'Logo.imageset'
+$accentDir = Join-Path $xcassetsDir 'AccentColor.colorset'
 
 New-Item -ItemType Directory -Force -Path $soundsDir | Out-Null
 New-Item -ItemType Directory -Force -Path $appIconDir | Out-Null
