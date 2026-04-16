@@ -77,6 +77,12 @@ Friday-Sunday are empty by default (Recovery days).
 
 This repository is now ready for both Windows development and Mac build handoff.
 
+### CI Bug Fix Summary
+
+- Root cause from CI logs: XcodeGen generated a newer project format, but CI used Xcode 15.4, causing "future project format (77)" failure.
+- Fix applied: CI now runs on macos-15 and explicitly selects latest available Xcode (prefers Xcode 26.x), then runs generation/build/test with that toolchain.
+- Result: Generated project format and CI Xcode are now aligned.
+
 ### Windows
 
 1. Continue coding in this repo from Windows as before.
@@ -102,6 +108,23 @@ This repository is now ready for both Windows development and Mac build handoff.
 - make build    -> simulator build
 - make test     -> simulator tests
 - make web-sounds -> download loud web alarm sounds
+
+### Version Targets Used
+
+- CI runner: macos-15
+- Preferred CI Xcode: latest installed Xcode 26.x (fallback to 16.x if 26.x not found)
+- Project deployment target: iOS 26.0
+- Swift language mode: Swift 6.0
+- CI simulator destination: iPhone 17
+
+### Docs Reference Used For Version Alignment
+
+- Apple Xcode release/support matrix: https://developer.apple.com/support/xcode/
+- GitHub Actions runner images software matrix:
+  - https://github.com/actions/runner-images/blob/main/images/macos/macos-15-arm64-Readme.md
+  - https://github.com/actions/runner-images/blob/main/images/macos/macos-14-arm64-Readme.md
+- XcodeGen project spec/options reference:
+  - https://github.com/yonaskolb/XcodeGen/blob/master/Docs/ProjectSpec.md
 
 ### CI
 

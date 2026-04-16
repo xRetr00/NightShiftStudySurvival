@@ -7,13 +7,18 @@ on:
 
 jobs:
   build-and-test:
-    runs-on: macos-14
+    runs-on: macos-15
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Install XcodeGen
         run: brew install xcodegen
+
+      - name: Select Xcode 26 toolchain
+        run: |
+          bash scripts/select_xcode.sh
+          xcodebuild -version
 
       - name: Generate Xcode project
         run: xcodegen generate
@@ -22,11 +27,14 @@ jobs:
         run: bash scripts/macos_download_web_alarm_sounds.sh
 
       - name: Show schemes
-        run: xcodebuild -list
+        run: |
+          bash scripts/select_xcode.sh
+          xcodebuild -list
 
       - name: Build and test
         run: |
+          bash scripts/select_xcode.sh
           xcodebuild test \
             -scheme NightShiftStudySurvival \
-            -destination 'platform=iOS Simulator,name=iPhone 15' \
+            -destination 'platform=iOS Simulator,name=iPhone 17' \
             -skipPackagePluginValidation
